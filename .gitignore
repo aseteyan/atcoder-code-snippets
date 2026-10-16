@@ -1,0 +1,9 @@
+.crossnote/
+.vscode/*
+!.vscode/*.code-snippets
+
+AntBook/
+
+# Markdown Preview Enhanced
+copy.js
+mpe-copy-btn.js
