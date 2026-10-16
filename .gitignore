@@ -3,6 +3,7 @@
 !.vscode/*.code-snippets
 
 AntBook/
+ac-library/
 
 # Markdown Preview Enhanced
 copy.js
