@@ -70,6 +70,100 @@ string bit_to_string(ull n, int L){
 }
 ```
 
+## オーバーフロー対策
+正整数列$A$に対して，`/` を切り捨て整数除算とすると，
+$$
+A[0] \times A[1] \times \cdots \times A[m] \le N
+\quad\Longleftrightarrow\quad
+N / A[1] / A[2] / \cdots / A[m] > 0
+$$
+
+### `__int128` [ABC 480 E - Product-Bounded Arithmetic Sequences](https://atcoder.jp/contests/abc480/tasks/abc480_e)
+```cpp
+#include <bits/stdc++.h>
+#include <boost/multiprecision/cpp_int.hpp>
+#define endl '\n'
+using namespace std;
+using namespace boost::multiprecision;
+
+using ll=long long;
+using ull=unsigned long long;
+using i128=__int128;
+
+std::istream& operator>>(std::istream& is, i128& x){
+    int128_t tmp;
+    if(is>>tmp)x=tmp.convert_to<i128>();
+    return is;
+}
+std::ostream& operator<<(std::ostream& os, i128 x){
+    return os<<int128_t(x);
+}
+
+void solve(){
+    i128 N; cin>>N;
+
+    auto check=[&](int a1, int d, int n){
+        i128 p=a1;
+        for(int i=1; i<n; ++i){
+            p*=a1+i*d;
+            if(p>N)return false;
+        }
+        return (p<=N);
+    };
+
+    ll ans=0;
+    for(int a=1; a<=1e6; ++a){
+        i128 T=(i128)a*(a+1)*(a+2);
+        int n=3;
+        while(T<=N){
+            int ok=0, ng=1e9;
+            while(ng-ok>1){
+                int mid=(ok+(ng-ok)/2);
+
+                (check(a, mid, n)?ok:ng)=mid;
+            }
+            ans+=ok;
+
+            T*=(a+n);
+            ++n;
+        }
+    }
+    cout<<ans<<endl;
+}
+```
+
+
+### `cpp_int` [多倍長整数](https://boostjp.github.io/tips/multiprec-int.html)
+```cpp
+#include <bits/stdc++.h>
+#include <boost/multiprecision/cpp_int.hpp>
+#define endl '\n'
+using namespace std;
+using namespace boost::multiprecision;
+
+using ll=long long;
+using ull=unsigned long long;
+using i128=__int128;
+
+std::istream& operator>>(std::istream& is, i128& x){
+    int128_t tmp;
+    if(is>>tmp)x=tmp.convert_to<i128>();
+    return is;
+}
+std::ostream& operator<<(std::ostream& os, i128 x){
+    return os<<int128_t(x);
+}
+
+void solve(){
+    string S="-12345678901234567890";
+    cpp_int N(S);
+    cin>>N;
+
+    i128 M; cin>>M;
+    cout<<M<<endl;
+}
+```
+
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 ## 二分探索
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
@@ -250,21 +344,21 @@ vector<ll> distances;
 
 void dijkstra(){
     int startIndex=0;
-	priority_queue<pair<ll, int>, vector<pair<ll, int>>, greater<pair<ll, int>>> q;
-	q.emplace((distances[startIndex]=0), startIndex);
+    priority_queue<pair<ll, int>, vector<pair<ll, int>>, greater<pair<ll, int>>> q;
+    q.emplace((distances[startIndex]=0), startIndex);
 
-	while(!q.empty()){
+    while(!q.empty()){
         const auto [distance, from]=q.top();
-		q.pop();
+        q.pop();
 
-		if(distances[from]<distance)continue;
+        if(distances[from]<distance)continue;
 
-		for(const auto& edge:G[from]){
-			const ll d=(distances[from]+edge.second);
+        for(const auto& [to, w]:G[from]){
+            const ll d=(distances[from]+w);
 
-			if(d<distances[edge.first])q.emplace((distances[edge.first]=d), edge.first);
-		}
-	}
+            if(d<distances[to])q.emplace((distances[to]=d), to);
+        }
+    }
 }
 
 void solve(){
@@ -525,4 +619,10 @@ __mpe-copy-btn.js__
   scan();
   setInterval(scan, 2000);
 })();
+```
+
+### 参照方法
+コードをコピーして使用する際は，参照URLを添付
+```cpp
+// Source: [URL]
 ```
