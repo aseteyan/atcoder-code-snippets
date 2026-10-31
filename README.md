@@ -70,6 +70,48 @@ string bit_to_string(ull n, int L){
 }
 ```
 
+## 幾何
+### 偏角ソート
+[ABC 481 E - Most Brilliant Starry Sky](https://atcoder.jp/contests/abc481/tasks/abc481_e)
+```cpp
+// https://atcoder.jp/contests/abc442/editorial/15136
+struct point{
+    ll x, y;
+};
+ll cross(const point &a, const point &b){
+    return a.x*b.y-a.y*b.x;
+}
+bool cmp(const point &a, const point &b){
+    ll ah=(a.y<0||(a.y==0&&a.x<0));
+    ll bh=(b.y<0||(b.y==0&&b.x<0));
+    if(ah!=bh)return ah<bh;
+    return cross(a, b)>0;
+}
+void argument_sort(vector<point> &points){
+    sort(points.begin(), points.end(), cmp);
+}
+
+void solve(){
+    int N; cin>>N;
+    vector<point> A(N);
+    for(int i=0; i<N; ++i){
+        cin>>A[i].x>>A[i].y;
+    }
+    argument_sort(A);
+
+    A.resize(2*N);
+    for(int i=0; i<N; ++i)A[N+i]=A[i];
+
+    int r=0, ans=0;
+    for(int i=0; i<N; ++i){
+        r=max(r, i+1);
+        while(r<2*N&&cross(A[i], A[r])>0)++r;
+        ans=max(ans, r-i);
+    }
+    cout<<ans<<endl;
+}
+```
+
 ## オーバーフロー対策
 正整数列$A$に対して，`/` を切り捨て整数除算とすると，
 $$
@@ -383,41 +425,6 @@ void solve(){
 }
 ```
 
-## 木の重心分解
-```cpp
-int N;
-vector<vector<int>> G;
-vector<int> sz, centroid;
-
-void dfs(ll v, ll p=-1){
-    bool iscentroid=true;
-
-    for(auto to:G[v])if(to!=p){
-        dfs(to, v);
-
-        if(sz[to]>N/2)iscentroid=false;
-        sz[v]+=sz[to];
-    }
-    if(N-sz[v]>N/2)iscentroid=false;
-    if(iscentroid)centroid.push_back(v);
-}
-
-void solve(){
-    cin>>N;
-    G.resize(N); sz.resize(N, 1);
-    for(int i=0; i+1<N; ++i){
-        int a, b; cin>>a>>b;
-        --a, --b;
-        G[a].push_back(b);
-        G[b].push_back(a);
-    }
-
-    dfs(0);
-    int g=centroid[0];
-    cout<<g<<endl;
-}
-```
-
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 ## セグメント木(Segment Tree)
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
@@ -571,8 +578,107 @@ void solve(){
 }
 ```
 
+## 木の直径と中心
+[ABC 482 E - Diameter Endpoint Colors](https://atcoder.jp/contests/abc482/tasks/abc482_e)
+[解説](https://atcoder.jp/contests/abc482/editorial/28018)
+[実装例 (C++, 偶奇で場合分け)](https://atcoder.jp/contests/abc482/submissions/80494073)
+
+- 木の直径が __偶数__ のとき，木の中心はちょうど1個存在する．
+- 木の直径が __奇数__ のとき，木の中心は2個存在し，辺で直接結ばれている．
+
+
+[実装例 (C++, 中点を追加して偶数に帰着)](https://atcoder.jp/contests/abc482/submissions/80493959)
+辺の中点に頂点を追加することで，木の直径は必ず偶数になることを利用．
+
+[自分の提出](https://atcoder.jp/contests/abc482/submissions/80533092)
+```cpp
+// 使い方：auto [diam, centers]=diameter_and_centers(G);
+
+// 頂点rootから全頂点への距離
+vector<int> bfs_dist(const vector<vector<int>>& G, int root){
+    int n=G.size();
+    vector<int> dist(n, n);
+    queue<int> Q;
+
+    dist[root]=0;
+    Q.push(root);
+    while(!Q.empty()){
+        int v=Q.front(); Q.pop();
+
+        for(int to:G[v])if(dist[to]>dist[v]+1){
+            dist[to]=dist[v]+1;
+            Q.push(to);
+        }
+    }
+    return dist;
+}
+
+// 距離が最大の頂点
+int farthest_vertex(const vector<int>& dist){
+    return max_element(dist.begin(), dist.end())-dist.begin();
+}
+
+// 木の直径と中心
+pair<int, vector<int>> diameter_and_centers(const vector<vector<int>>& G){
+    int n=G.size();
+    int a=farthest_vertex(bfs_dist(G, 0));
+    auto distA=bfs_dist(G, a);
+    int b=farthest_vertex(distA);
+    auto distB=bfs_dist(G, b);
+
+    int diam=distA[b];
+    vector<int> centers;
+    if(diam%2==0){
+        for(int i=0; i<n; ++i){
+            if(distA[i]==diam/2&&distB[i]==diam/2)centers.push_back(i);
+        }
+    }else{
+        for(int i=0; i<n; ++i){
+            if(distA[i]==(diam-1)/2&&distB[i]==(diam+1)/2)centers.push_back(i);
+            if(distA[i]==(diam+1)/2&&distB[i]==(diam-1)/2)centers.push_back(i);
+        }
+    }
+    return {diam, centers};
+}
+```
+
+## 木の重心分解
+```cpp
+int N;
+vector<vector<int>> G;
+vector<int> sz, centroid;
+
+void dfs(ll v, ll p=-1){
+    bool iscentroid=true;
+
+    for(auto to:G[v])if(to!=p){
+        dfs(to, v);
+
+        if(sz[to]>N/2)iscentroid=false;
+        sz[v]+=sz[to];
+    }
+    if(N-sz[v]>N/2)iscentroid=false;
+    if(iscentroid)centroid.push_back(v);
+}
+
+void solve(){
+    cin>>N;
+    G.resize(N); sz.resize(N, 1);
+    for(int i=0; i+1<N; ++i){
+        int a, b; cin>>a>>b;
+        --a, --b;
+        G[a].push_back(b);
+        G[b].push_back(a);
+    }
+
+    dfs(0);
+    int g=centroid[0];
+    cout<<g<<endl;
+}
+```
+
 # 付録
-#### Markdown Preview Enhanced: Customize Preview Html Head (Workspace)
+### Markdown Preview Enhanced: Customize Preview Html Head (Workspace)
 ```html
 <script type="text/javascript" src="./mpe-copy-btn.js"></script>
 ```
@@ -625,4 +731,12 @@ __mpe-copy-btn.js__
 コードをコピーして使用する際は，参照URLを添付
 ```cpp
 // Source: [URL]
+// Source: https://github.com/aseteyan/atcoder-code-snippets
+```
+
+### Git
+```bash
+git add .
+git commit -m "内容"
+git push
 ```
